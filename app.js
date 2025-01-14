@@ -1,8 +1,7 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
 const express = require('express');
 const { spawn } = require('child_process');
 const http = require('http');
+const path = require("path")
 const WebSocket = require('ws');
 
 const app = express();
@@ -60,18 +59,21 @@ app.get('/downloadSeason', (req, res) => {
 
     const child = spawn('node', ['downloadAsProcess.js'], {
         detached: true,
-        stdio: ['pipe'/* , 'pipe', 'pipe' */]
+        stdio: ['pipe', 'pipe', 'pipe' ]
     });
 
     child.stdin.write(JSON.stringify({ seasonURL, title }));
     child.stdin.end();
 
-    /* child.stdout.on('data', (data) => {
-       console.log(`${data.toString()}`);
-   });
-   child.stderr.on('data', (data) => {
-       console.error(`${data.toString()}`);
-   });  */
+    // Redirect child process logs to WebSocket
+    child.stdout.on('data', (data) => {
+        console.log(`[Downloader]: ${data.toString()}`);
+    });
+
+    child.stderr.on('data', (data) => {
+        console.error(`[Downloader]: ${data.toString()}`);
+    });
+
 
     child.unref();
 

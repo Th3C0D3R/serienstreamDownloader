@@ -25,7 +25,7 @@ async function downloadFiles(videoURLS, title, convert = false) {
         await new Promise(async (resolve, reject) => {
             var doptions = {
                 url: u[2],
-                outputDir: `${title}/Season 0${u[0]}`,
+                outputDir: `downloaded/${title}/Season 0${u[0]}`,
                 videoUrlDirPath: u[2].split("index")[0],
                 outputFileName: `S0${u[0]}E${u[1]}.ts`
             };

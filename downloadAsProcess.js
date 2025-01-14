@@ -1,4 +1,3 @@
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 process.stdin.on('data', async (data) => {
   var { JSDOM } = require('jsdom');
@@ -94,7 +93,7 @@ process.stdin.on('data', async (data) => {
     return;
   }
 
-  await utils.downloadFiles(result, downloader, title)
+  await utils.downloadFiles(result, title)
     .then(() => console.log("All downloads complete"))
     .catch(err => console.error("An error occurred:", err));
 });
