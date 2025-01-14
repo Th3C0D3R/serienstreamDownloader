@@ -17,6 +17,7 @@ jspm_packages/
 daemon/
 downloaded/
 .running
+runBackground.bat
 
 # Optional npm cache directory
 .npm
