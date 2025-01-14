@@ -2,13 +2,50 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const express = require('express');
 const { spawn } = require('child_process');
+const http = require('http');
+const WebSocket = require('ws');
 
-const app = express()
-const port = 3000
+const app = express();
+const port = 3000;
 
+// Create an HTTP server and WebSocket server
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// Serve static HTML file
 app.get('/', (req, res) => {
-    res.send('Hello World!');
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+// Redirect console logs/errors to WebSocket clients
+function setupWebSocketLoggers() {
+    const sendToClients = (type, message) => {
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({ type, message }));
+            }
+        });
+    };
+
+    // Override console.log and console.error
+    const originalLog = console.log;
+    const originalError = console.error;
+
+    console.log = (...args) => {
+        const message = args.join(' ');
+        originalLog(message);
+        sendToClients('log', message);
+    };
+
+    console.error = (...args) => {
+        const message = args.join(' ');
+        originalError(message);
+        sendToClients('error', message);
+    };
+}
+
+// Setup WebSocket loggers
+setupWebSocketLoggers();
 
 app.get('/downloadSeason', (req, res) => {
     if (req.query["url"] === undefined) {
@@ -29,12 +66,12 @@ app.get('/downloadSeason', (req, res) => {
     child.stdin.write(JSON.stringify({ seasonURL, title }));
     child.stdin.end();
 
-     /* child.stdout.on('data', (data) => {
-        console.log(`${data.toString()}`);
-    });
-    child.stderr.on('data', (data) => {
-        console.error(`${data.toString()}`);
-    });  */
+    /* child.stdout.on('data', (data) => {
+       console.log(`${data.toString()}`);
+   });
+   child.stderr.on('data', (data) => {
+       console.error(`${data.toString()}`);
+   });  */
 
     child.unref();
 
@@ -42,6 +79,8 @@ app.get('/downloadSeason', (req, res) => {
 
 });
 
-app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+
+// Start the server
+server.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
