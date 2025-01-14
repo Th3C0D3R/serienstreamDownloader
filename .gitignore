@@ -1,0 +1,54 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Environment variables file
+.env
+.env.*.local
+
+# Testing output
+coverage/
+
+# Debug files
+*.rej
+*.orig
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Editor and IDE-specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.swp
+
+# Build directories
+dist/
+build/
+
+# Dependency directories for package managers
+/.pnp
+.pnp.js
+
+# Miscellaneous
+*.log
+*.tgz
+*.lock-wscript
+package-lock.json

@@ -1,0 +1,19 @@
+{
+  "name": "seriendownloader",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --inspect-brk app.js "
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "express": "^4.21.2",
+    "handbrake-js": "^7.1.0",
+    "jsdom": "^26.0.0",
+    "node-fetch": "^3.3.2",
+    "request": "^2.88.2"
+  }
+}
