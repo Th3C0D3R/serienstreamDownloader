@@ -19,8 +19,9 @@ async function convertVideo(input, output) {
     });
 }
 
-async function downloadFiles(videoURLS, title) {
+async function downloadFiles(videoURLS, title, convert = false) {
     for (var u of videoURLS) {
+        var filename = ""
         await new Promise(async (resolve, reject) => {
             var doptions = {
                 url: u[2],
@@ -44,6 +45,7 @@ async function downloadFiles(videoURLS, title) {
 
             const onComplete = function (outFile) {
                 console.log("Done:", outFile);
+                filename = outFile;
                 listener.off('start', onStart);
                 listener.off('progress', onProgress);
                 listener.off('downloaded', onDownloaded);
@@ -69,6 +71,7 @@ async function downloadFiles(videoURLS, title) {
             listener.on('error', onError);
 
         });
+        convert && await convertVideo(filename,filename.replace(".ts",".mp4"));
     }
 
 }
