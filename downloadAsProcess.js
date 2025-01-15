@@ -1,30 +1,11 @@
+var { JSDOM } = require('jsdom');
+const utils = require("./utils");
+const fs = require("fs");
 
 process.stdin.on('data', async (data) => {
-  var { JSDOM } = require('jsdom');
-  const utils = require("./utils");
-  const fs = require("fs");
-  const path = require("path");
 
-  var lockFile = path.join(__dirname, ".running");
-  if (fs.existsSync(lockFile)) {
-    console.error("Process already running! CURRENTLY ONLY SINGLE-THREAD WORK");
-    return;
-  }
-  else {
-    fs.writeFileSync(lockFile, "", { encoding: "utf-8" });
-  }
-
-  const { seasonURL, title, less, resume, queue } = JSON.parse(data.toString());
-
-  utils.feature_flags.LESSLOG = less;
-  utils.feature_flags.DOWNLOAD_QUEUE = queue;
-  utils.feature_flags.RESUME_DOWNLOAD = resume;
-
-  !utils.feature_flags.LESSLOG && console.log(JSON.parse(data.toString()));
-  console.log(`Starting download for URL: ${seasonURL}, Title: ${title}`);
-
-  // Base URL of the site
-  var originUrl = "https://s.to/";
+  console.log("##LESS##"+JSON.parse(data.toString()));
+  const { seasonURL, title, resume, queue } = JSON.parse(data.toString());
 
   if (seasonURL === null) {
     console.error("No URL provided!");
@@ -35,6 +16,52 @@ process.stdin.on('data', async (data) => {
     console.error("No title provided (used for naming output directory)");
     return;
   }
+
+  utils.feature_flags.DOWNLOAD_QUEUE = queue;
+  utils.feature_flags.RESUME_DOWNLOAD = resume;
+
+  //check lockfile and add task into queue if present
+  if (!fs.existsSync(utils.LOCKFILE)) {
+    fs.writeFileSync(utils.LOCKFILE, "", { encoding: "utf-8" });
+    fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
+  }
+  else if (!utils.feature_flags.DOWNLOAD_QUEUE) {
+    console.error("Download already running AND Queue Download turned OFF!");
+    return;
+  }
+  else if (fs.existsSync(utils.LOCKFILE) && utils.feature_flags.DOWNLOAD_QUEUE) {
+    fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
+    return;
+  }
+  var queueData = fs.readFileSync(utils.QUEUEFILE, { encoding: "utf-8" });
+  var queueItems = queueData.split(";");
+
+  await doTasks(queueItems);
+
+
+  console.log(`Queue Download completed`);
+  fs.unlinkSync(utils.LOCKFILE);
+  fs.unlinkSync(utils.QUEUEFILE);
+});
+
+process.stdin.on('end', () => {
+  console.log('##LESS##Child process received all input data.');
+});
+
+
+async function doTasks(queueItems) {
+  if (queueItems.length <= 0) return;
+  var firstItem = queueItems[0].split("#");
+  if (firstItem.length <= 0) return;
+  if (firstItem[0].length <= 0 || firstItem[1].length <= 0) return;
+
+  let seasonURL = firstItem[0];
+  let title = firstItem[1];
+
+  console.log(`Starting download for URL: ${seasonURL}, Title: ${title}`);
+
+  // Base URL of the site
+  var originUrl = "https://s.to/";
 
   var html = await fetch(seasonURL);
   html = await html.text();
@@ -98,10 +125,13 @@ process.stdin.on('data', async (data) => {
     return;
   }
 
-  await utils.downloadFiles(result, title)
-    .then(() => console.log("All downloads complete"));
-});
-
-process.stdin.on('end', () => {
-  console.log('Child process received all input data.');
-});
+  await utils.downloadFiles(result, title);
+  
+  console.log("Season downloads complete");
+  console.log("Checking for more in QUEUE...");
+  var queueData = fs.readFileSync(utils.QUEUEFILE, { encoding: "utf-8" });
+  var queueItems = queueData.split(";");
+  queueItems.shift();
+  fs.writeFileSync(utils.QUEUEFILE,queueItems.join(";"));
+  await doTasks(queueItems);
+}

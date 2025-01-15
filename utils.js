@@ -1,6 +1,7 @@
 // Import required modules
 const hbjs = require('handbrake-js');
 const {download} = require('./downloader');
+const path = require("path");
 
 // Convert a video using HandBrake
 async function convertVideo(input, output) {
@@ -27,28 +28,27 @@ async function downloadFiles(videoURLS, title, convert = false) {
                 url: u[2],
                 outputDir: `downloaded/${title}/Season 0${u[0]}`,
                 videoUrlDirPath: u[2].split("index")[0],
-                outputFileName: `S0${u[0]}E${u[1]}.ts`,
-                less: feature_flags.LESSLOG
+                outputFileName: `S0${u[0]}E${u[1]}.ts`
             };
             let listener = download(doptions);
 
             const onStart = function (options) {
-                console.log("Download started" + (!feature_flags.LESSLOG ? `: ${options}` : ""));
+                console.log("Download started: ",options.outputFileName);
             };
 
             const onProgress = function (percent) {
-                console.log("Progress:", percent);
+                console.log("##LESS##Progress:", percent);
             };
 
             const onDownloaded = function (list) {
-                console.log("Download finished" + (!feature_flags.LESSLOG ? `: ${list}` : ""));
+                console.log("##LESS##Download finished: ",list);
             };
 
             const onComplete = function (outFile) {
                 console.log("Done:", outFile);
                 filename = outFile;
                 listener.off('start', onStart);
-                !feature_flags.LESSLOG && listener.off('progress', onProgress);
+                listener.off('progress', onProgress);
                 listener.off('downloaded', onDownloaded);
                 listener.off('complete', onComplete);
                 listener.off('error', onError);
@@ -121,9 +121,12 @@ function sleep(ms) {
 const feature_flags = {
     MULTI_THREADING: false,
     DOWNLOAD_QUEUE: false,
-    LESSLOG: false,
     RESUME_DOWNLOAD: false
 }
+
+
+const LOCKFILE = path.join(__dirname, ".running");
+const QUEUEFILE = path.join(__dirname, ".queue");
 
 // Export all utility functions
 module.exports = {
@@ -131,5 +134,7 @@ module.exports = {
     downloadFiles,
     getIndexUrls,
     sleep,
-    feature_flags
+    feature_flags,
+    LOCKFILE,
+    QUEUEFILE
 };

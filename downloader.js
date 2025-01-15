@@ -14,8 +14,7 @@ let downloadOptions = {
     headerReferrer: '',
     retryOnError: true,
     proxy: null,
-    debug: false,
-    less: false
+    debug: false
 }
 
 function loadM3u8(onLoad) {
@@ -171,8 +170,6 @@ function mergeFiles(list) {
 function download(options) {
     setImmediate(() => {
         downloadOptions = Object.assign(downloadOptions, options);
-
-        !downloadOptions.less && console.log('DEBUG', downloadOptions.debug);
 
         if (!downloadOptions.videoUrlDirPath) {
             downloadOptions.videoUrlDirPath = downloadOptions.url.substring(0, downloadOptions.url.lastIndexOf('/')) + '/';

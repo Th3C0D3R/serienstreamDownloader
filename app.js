@@ -4,8 +4,7 @@ const http = require('http');
 const path = require("path");
 const fs = require("fs");
 const WebSocket = require('ws');
-
-const utils = require('./utils');
+const {LOCKFILE, QUEUEFILE} = require("./utils")
 
 const app = express();
 const port = 3000;
@@ -14,10 +13,12 @@ const port = 3000;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-var lockFile = path.join(__dirname,".running");
-if(fs.existsSync(lockFile)){
-    fs.unlinkSync(lockFile);
+if(fs.existsSync(LOCKFILE)){
+    fs.unlinkSync(LOCKFILE);
 }
+/* if(fs.existsSync(QUEUEFILE)){
+    fs.unlinkSync(QUEUEFILE);
+} */
 
 // Serve static HTML file
 app.get('/', (req, res) => {
@@ -61,7 +62,6 @@ app.get('/downloadSeason', (req, res) => {
     if (req.query["title"] === undefined) {
         return res.status(400).json({ error: "Title of the Stream is missing!" });
     }
-    let less = req.query["less"] !== undefined;
     let resume = req.query["resume"] !== undefined;
     let queue = req.query["queue"] !== undefined;
 
@@ -73,7 +73,7 @@ app.get('/downloadSeason', (req, res) => {
         stdio: ['pipe', 'pipe', 'pipe' ]
     });
 
-    child.stdin.write(JSON.stringify({ seasonURL, title, less, resume, queue }));
+    child.stdin.write(JSON.stringify({ seasonURL, title, resume, queue }));
     child.stdin.end();
 
     // Redirect child process logs to WebSocket
@@ -84,7 +84,6 @@ app.get('/downloadSeason', (req, res) => {
     child.stderr.on('data', (data) => {
         console.error(`[Downloader]: ${data.toString()}`);
     });
-
 
     child.unref();
 
