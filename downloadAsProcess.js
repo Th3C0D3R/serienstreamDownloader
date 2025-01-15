@@ -5,17 +5,22 @@ process.stdin.on('data', async (data) => {
   const fs = require("fs");
   const path = require("path");
 
-  var lockFile = path.join(__dirname,".running");
-  if(fs.existsSync(lockFile)){
+  var lockFile = path.join(__dirname, ".running");
+  if (fs.existsSync(lockFile)) {
     console.error("Process already running! CURRENTLY ONLY SINGLE-THREAD WORK");
+    return;
   }
-  else{
-    fs.writeFileSync(lockFile,"",{encoding:"utf-8"});
+  else {
+    fs.writeFileSync(lockFile, "", { encoding: "utf-8" });
   }
 
-  const { seasonURL, title } = JSON.parse(data.toString());
+  const { seasonURL, title, less, resume, queue } = JSON.parse(data.toString());
 
-  console.log(JSON.parse(data.toString()));
+  utils.feature_flags.LESSLOG = less;
+  utils.feature_flags.DOWNLOAD_QUEUE = queue;
+  utils.feature_flags.RESUME_DOWNLOAD = resume;
+
+  !utils.feature_flags.LESSLOG && console.log(JSON.parse(data.toString()));
   console.log(`Starting download for URL: ${seasonURL}, Title: ${title}`);
 
   // Base URL of the site
@@ -94,8 +99,7 @@ process.stdin.on('data', async (data) => {
   }
 
   await utils.downloadFiles(result, title)
-    .then(() => console.log("All downloads complete"))
-    .catch(err => console.error("An error occurred:", err));
+    .then(() => console.log("All downloads complete"));
 });
 
 process.stdin.on('end', () => {
