@@ -1,6 +1,6 @@
 // Import required modules
 const hbjs = require('handbrake-js');
-const downloader = require('./downloader');
+const {download} = require('./downloader');
 
 // Convert a video using HandBrake
 async function convertVideo(input, output) {
@@ -27,12 +27,13 @@ async function downloadFiles(videoURLS, title, convert = false) {
                 url: u[2],
                 outputDir: `downloaded/${title}/Season 0${u[0]}`,
                 videoUrlDirPath: u[2].split("index")[0],
-                outputFileName: `S0${u[0]}E${u[1]}.ts`
+                outputFileName: `S0${u[0]}E${u[1]}.ts`,
+                less: feature_flags.LESSLOG
             };
-            let listener = downloader.download(doptions);
+            let listener = download(doptions);
 
             const onStart = function (options) {
-                console.log("Started downloading:", options);
+                console.log("Download started" + (!feature_flags.LESSLOG ? `: ${options}` : ""));
             };
 
             const onProgress = function (percent) {
@@ -40,14 +41,14 @@ async function downloadFiles(videoURLS, title, convert = false) {
             };
 
             const onDownloaded = function (list) {
-                console.log("Downloaded:", list);
+                console.log("Download finished" + (!feature_flags.LESSLOG ? `: ${list}` : ""));
             };
 
             const onComplete = function (outFile) {
                 console.log("Done:", outFile);
                 filename = outFile;
                 listener.off('start', onStart);
-                listener.off('progress', onProgress);
+                !feature_flags.LESSLOG && listener.off('progress', onProgress);
                 listener.off('downloaded', onDownloaded);
                 listener.off('complete', onComplete);
                 listener.off('error', onError);
@@ -56,12 +57,12 @@ async function downloadFiles(videoURLS, title, convert = false) {
 
             const onError = function (error) {
                 console.error("Error:", error);
-                listener.off('start', onStart);
+                /* listener.off('start', onStart);
                 listener.off('progress', onProgress);
                 listener.off('downloaded', onDownloaded);
                 listener.off('complete', onComplete);
                 listener.off('error', onError);
-                reject(error); // Stop the loop on error
+                reject(error); // Stop the loop on error */
             };
 
             listener.on('start', onStart);
@@ -117,10 +118,18 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const feature_flags = {
+    MULTI_THREADING: false,
+    DOWNLOAD_QUEUE: false,
+    LESSLOG: false,
+    RESUME_DOWNLOAD: false
+}
+
 // Export all utility functions
 module.exports = {
     convertVideo,
     downloadFiles,
     getIndexUrls,
     sleep,
+    feature_flags
 };

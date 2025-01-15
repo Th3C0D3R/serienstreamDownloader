@@ -19,14 +19,14 @@
 
         input,
         button {
-            padding: 10px;
+            padding: 5px;
             font-size: 16px;
         }
 
-        input {
+        input.inputtext {
             flex-grow: 1;
             /* Make input take up remaining space */
-            min-width: 200px;
+            min-width: 100px;
             /* Set a minimum width */
         }
 
@@ -36,6 +36,16 @@
             cursor: pointer;
             white-space: nowrap;
             /* Ensure the button text stays in one line */
+        }
+
+        #title {
+            width: 150px;
+            /* Shrink the title input */
+        }
+
+        .checkbox-container{
+            display: flex;
+            flex-direction: column;
         }
 
         #console {
@@ -52,11 +62,17 @@
 </head>
 
 <body>
-    <h1>Downloader with Console</h1>
+    <h1>SerienStream Downloader</h1>
     <div class="form-container">
-        <input type="text" id="url" placeholder="Enter URL" />
-        <input type="text" id="title" placeholder="Enter Title" />
+        <input type="text" id="url" class="inputtext" placeholder="Enter URL" />
+        <input type="text" id="title" class="inputtext" placeholder="Enter Title" />
         <button onclick="startDownload()">Start Download</button>
+    </div>
+
+    <div class="checkbox-container">
+        <label><input type="checkbox" id="lessOutput" /> Less Output</label>
+        <label><input type="checkbox" id="queueDownload" /> Queue Download [WIP | MISSING]</label>
+        <label><input type="checkbox" id="tryResume" /> Try Resume Download [WIP | MISSING]</label>
     </div>
 
     <h2>Console</h2>
@@ -83,13 +99,16 @@
         function startDownload() {
             const url = document.getElementById('url').value;
             const title = document.getElementById('title').value;
+            const less = document.getElementById('lessOutput').checked;
+            const queue = document.getElementById('queueDownload').checked;
+            const resume = document.getElementById('tryResume').checked;
 
             if (!url || !title) {
                 alert('Please enter both URL and Title.');
                 return;
             }
 
-            fetch(`/downloadSeason?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`)
+            fetch(`/downloadSeason?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}${less ? '&less' : ''}${queue ? '&queue' : ''}${resume ? '&resume' : ''}`)
                 .then((response) => response.json())
                 .then((data) => {
                     addMessage(data.message, "white");

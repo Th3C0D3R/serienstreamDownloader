@@ -14,7 +14,8 @@ let downloadOptions = {
     headerReferrer: '',
     retryOnError: true,
     proxy: null,
-    debug: false
+    debug: false,
+    less: false
 }
 
 function loadM3u8(onLoad) {
@@ -171,12 +172,7 @@ function download(options) {
     setImmediate(() => {
         downloadOptions = Object.assign(downloadOptions, options);
 
-
-        console.log('DEBUG', downloadOptions.debug);
-
-
-
-
+        !downloadOptions.less && console.log('DEBUG', downloadOptions.debug);
 
         if (!downloadOptions.videoUrlDirPath) {
             downloadOptions.videoUrlDirPath = downloadOptions.url.substring(0, downloadOptions.url.lastIndexOf('/')) + '/';

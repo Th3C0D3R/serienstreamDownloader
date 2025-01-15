@@ -1,8 +1,11 @@
 const express = require('express');
 const { spawn } = require('child_process');
 const http = require('http');
-const path = require("path")
+const path = require("path");
+const fs = require("fs");
 const WebSocket = require('ws');
+
+const utils = require('./utils');
 
 const app = express();
 const port = 3000;
@@ -10,6 +13,11 @@ const port = 3000;
 // Create an HTTP server and WebSocket server
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+
+var lockFile = path.join(__dirname,".running");
+if(fs.existsSync(lockFile)){
+    fs.unlinkSync(lockFile);
+}
 
 // Serve static HTML file
 app.get('/', (req, res) => {
@@ -53,16 +61,19 @@ app.get('/downloadSeason', (req, res) => {
     if (req.query["title"] === undefined) {
         return res.status(400).json({ error: "Title of the Stream is missing!" });
     }
+    let less = req.query["less"] !== undefined;
+    let resume = req.query["resume"] !== undefined;
+    let queue = req.query["queue"] !== undefined;
 
-    var seasonURL = req.query["url"];
-    var title = req.query["title"];
+    var seasonURL = req.query["url"].trim();
+    var title = req.query["title"].trim();
 
     const child = spawn('node', ['downloadAsProcess.js'], {
         detached: true,
         stdio: ['pipe', 'pipe', 'pipe' ]
     });
 
-    child.stdin.write(JSON.stringify({ seasonURL, title }));
+    child.stdin.write(JSON.stringify({ seasonURL, title, less, resume, queue }));
     child.stdin.end();
 
     // Redirect child process logs to WebSocket
