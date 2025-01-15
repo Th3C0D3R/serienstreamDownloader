@@ -4,15 +4,15 @@ const fs = require("fs");
 
 process.stdin.on('data', async (data) => {
 
-  console.log("##LESS##"+JSON.parse(data.toString()));
-  const { seasonURL, title, resume, queue } = JSON.parse(data.toString());
+  console.log("##LESS##" + JSON.parse(data.toString()));
+  const { seasonURL, title, resume, queue, Resume_QUEUE } = JSON.parse(data.toString());
 
-  if (seasonURL === null) {
+  if (seasonURL === null && !Resume_QUEUE) {
     console.error("No URL provided!");
     return;
   }
 
-  if (title === null) {
+  if (title === null && !Resume_QUEUE) {
     console.error("No title provided (used for naming output directory)");
     return;
   }
@@ -23,13 +23,14 @@ process.stdin.on('data', async (data) => {
   //check lockfile and add task into queue if present
   if (!fs.existsSync(utils.LOCKFILE)) {
     fs.writeFileSync(utils.LOCKFILE, "", { encoding: "utf-8" });
-    fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
+    if (!Resume_QUEUE)
+      fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
   }
   else if (!utils.feature_flags.DOWNLOAD_QUEUE) {
     console.error("Download already running AND Queue Download turned OFF!");
     return;
   }
-  else if (fs.existsSync(utils.LOCKFILE) && utils.feature_flags.DOWNLOAD_QUEUE) {
+  else if (fs.existsSync(utils.LOCKFILE) && utils.feature_flags.DOWNLOAD_QUEUE && !Resume_QUEUE) {
     fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
     return;
   }
@@ -126,12 +127,12 @@ async function doTasks(queueItems) {
   }
 
   await utils.downloadFiles(result, title);
-  
+
   console.log("Season downloads complete");
   console.log("Checking for more in QUEUE...");
   var queueData = fs.readFileSync(utils.QUEUEFILE, { encoding: "utf-8" });
   var queueItems = queueData.split(";");
   queueItems.shift();
-  fs.writeFileSync(utils.QUEUEFILE,queueItems.join(";"));
+  fs.writeFileSync(utils.QUEUEFILE, queueItems.join(";"));
   await doTasks(queueItems);
 }

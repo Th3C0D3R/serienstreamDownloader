@@ -4,7 +4,7 @@ const http = require('http');
 const path = require("path");
 const fs = require("fs");
 const WebSocket = require('ws');
-const {LOCKFILE, QUEUEFILE} = require("./utils")
+const { LOCKFILE, QUEUEFILE } = require("./utils")
 
 const app = express();
 const port = 3000;
@@ -13,15 +13,40 @@ const port = 3000;
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-if(fs.existsSync(LOCKFILE)){
+if (fs.existsSync(LOCKFILE)) {
     fs.unlinkSync(LOCKFILE);
 }
-/* if(fs.existsSync(QUEUEFILE)){
+/* if(fs.existsSync(QUEUEFILE)){    
     fs.unlinkSync(QUEUEFILE);
 } */
 
+let resume_queue = false;
+
 // Serve static HTML file
 app.get('/', (req, res) => {
+
+    if (fs.existsSync(QUEUEFILE)) {
+
+        const child = spawn('node', ['downloadAsProcess.js'], {
+            detached: true,
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+
+        child.stdin.write(JSON.stringify({ seasonURL:undefined, title:undefined, resume:false, queue:true, resume_queue:true }));
+        child.stdin.end();
+
+        // Redirect child process logs to WebSocket
+        child.stdout.on('data', (data) => {
+            console.log(`[Downloader]: ${data.toString()}`);
+        });
+
+        child.stderr.on('data', (data) => {
+            console.error(`[Downloader]: ${data.toString()}`);
+        });
+
+        child.unref();
+    }
+
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -70,10 +95,10 @@ app.get('/downloadSeason', (req, res) => {
 
     const child = spawn('node', ['downloadAsProcess.js'], {
         detached: true,
-        stdio: ['pipe', 'pipe', 'pipe' ]
+        stdio: ['pipe', 'pipe', 'pipe']
     });
 
-    child.stdin.write(JSON.stringify({ seasonURL, title, resume, queue }));
+    child.stdin.write(JSON.stringify({ seasonURL, title, resume, queue, resume_queue }));
     child.stdin.end();
 
     // Redirect child process logs to WebSocket
