@@ -1,21 +1,25 @@
-let fs = require('fs')
-let request = require('request');
+const fs = require('fs');
+const request = require('request');
+const utils = require('./utils');
 
 let EventEmitter = require('events').EventEmitter;
-let eventEmitter = new EventEmitter()
+let eventEmitter = new EventEmitter();
 
 let downloadOptions = {
     url: '',
     outputDir: '',
     outputFileName: new Date().getTime() + '.ts',
-    threadCount: 5,
+    threadCount: 3,
     videoSuffix: '',
     videoUrlDirPath: '',
     headerReferrer: '',
     retryOnError: true,
     proxy: null,
-    debug: false
+    debug: false,
+    useResumeDEBUG: false,
+    forceReDownload: false
 }
+
 
 function loadM3u8(onLoad) {
     let options = {
@@ -26,55 +30,39 @@ function loadM3u8(onLoad) {
         },
         proxy: downloadOptions.proxy
     };
-    request(options, function (error, response) {
+    request(options, (error, response, body) => {
 
 
-        if (error) {
+        if (error || response.statusCode !== 200) {
             eventEmitter.emit('error', error);
             return
         }
 
         if (downloadOptions.debug) {
-            console.log('M3u8 url res:', response.body);
+            console.log('M3u8 url res:', body);
         }
 
-
-        let lines = response.body.split('\n')
-        let files = []
-        lines.forEach(line => {
+        let files = body.split('\n').filter(line => {
             let videoSuffix = downloadOptions.videoSuffix;
+
+            return (
+                line.trim() !== '' &&
+                !line.startsWith('#') &&
+                (!videoSuffix || line.endsWith(videoSuffix) || line.includes(videoSuffix + "?"))
+            );
+        }).map(line => {
             let videoUrlDirPath = downloadOptions.videoUrlDirPath;
-
-            if (!videoSuffix || (
-                line.endsWith(videoSuffix) || line.includes(videoSuffix + "?")
-            )
-            ) {
-                if (line.trim() === '') {
-                    return;
-                }
-                if (line.startsWith('#')) {
-                    return;
-                }
-
-                if (line.startsWith('http://') || line.startsWith('https://')) {
-                    files.push(line);
-                } else {
-                    let file =
-                        (videoUrlDirPath.endsWith("/")
-                            ? videoUrlDirPath
-                            : videoUrlDirPath + "/") + line.replace(/^\//, '');
-
-                    files.push(file);
-                }
-
+            if (line.startsWith('http://') || line.startsWith('https://')) {
+                return line;
             }
+            return (videoUrlDirPath.endsWith("/")
+                ? videoUrlDirPath
+                : videoUrlDirPath + "/") + line.replace(/^\//, '');
         });
 
         onLoad(files)
     });
 }
-
-
 
 function downloadVideoFile(url) {
     return new Promise((resolve, reject) => {
@@ -107,11 +95,11 @@ function downloadVideoFile(url) {
     })
 }
 
-let startTasks = (taskList, taskHandlePromise, limit = 3) => {
+let startTasks = (taskList, taskHandlePromise, progress = [0,0], limit = 3) => {
     let retryOnError = downloadOptions.retryOnError;
 
     let _runTask = (arr) => {
-        // console.debug('Progress: ' + ((taskList.length - arr.length) / taskList.length * 100).toFixed(2) + '%')
+        //console.debug(`Counter: ${taskList.length - arr.length}`)
         eventEmitter.emit('progress', parseInt((taskList.length - arr.length) / taskList.length * 100));
 
 
@@ -123,7 +111,7 @@ let startTasks = (taskList, taskHandlePromise, limit = 3) => {
 
         return taskHandlePromise(_url)
             .then(() => {
-
+                utils.saveProgress(downloadOptions.outputDir, taskList.length - arr.length,downloadOptions.outputFileName);
                 if (arr.length !== 0) return _runTask(arr)
             }).catch((item) => {
                 if (retryOnError) {
@@ -136,6 +124,8 @@ let startTasks = (taskList, taskHandlePromise, limit = 3) => {
     };
 
     let listCopy = [].concat(taskList);
+    if (progress[1] > 0)
+        listCopy = listCopy.slice(progress[1] - 1);
     let asyncTaskList = []
     while (limit > 0 && listCopy.length > 0) {
         asyncTaskList.push(_runTask(listCopy));
@@ -176,9 +166,15 @@ function download(options) {
         }
 
         if (!fs.existsSync(downloadOptions.outputDir)) {
-            fs.mkdirSync(downloadOptions.outputDir,{recursive:true});
+            fs.mkdirSync(downloadOptions.outputDir, { recursive: true });
         }
 
+        const lastDownloadedInfo = utils.getProgress(downloadOptions.outputDir);
+
+        if (!downloadOptions.forceReDownload && fs.existsSync(downloadOptions.outputDir + '/' + downloadOptions.outputFileName)) {
+            eventEmitter.emit('skipped', downloadOptions.outputFileName);
+            return;
+        }
 
         loadM3u8((list) => {
             if (downloadOptions.debug) {
@@ -187,11 +183,13 @@ function download(options) {
 
             eventEmitter.emit('progress', 0);
             // mergeFiles(list)
-            startTasks(list, downloadVideoFile, downloadOptions.threadCount).then(() => {
+
+            startTasks(list, downloadVideoFile, lastDownloadedInfo, downloadOptions.threadCount).then(() => {
                 eventEmitter.emit('downloaded', list);
 
-                mergeFiles(list)
+                mergeFiles(list);
             })
+
         })
 
         eventEmitter.emit('start', downloadOptions);

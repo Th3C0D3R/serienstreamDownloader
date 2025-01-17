@@ -1,7 +1,7 @@
 // Import required modules
 const hbjs = require('handbrake-js');
-const {download} = require('./downloader');
 const path = require("path");
+const fs = require("fs");
 
 // Convert a video using HandBrake
 async function convertVideo(input, output) {
@@ -20,61 +20,34 @@ async function convertVideo(input, output) {
     });
 }
 
-async function downloadFiles(videoURLS, title, convert = false) {
-    for (var u of videoURLS) {
-        var filename = ""
-        await new Promise(async (resolve, reject) => {
-            var doptions = {
-                url: u[2],
-                outputDir: `downloaded/${title}/Season 0${u[0]}`,
-                videoUrlDirPath: u[2].split("index")[0],
-                outputFileName: `S0${u[0]}E${u[1]}.ts`
-            };
-            let listener = download(doptions);
-
-            const onStart = function (options) {
-                console.log("Download started: ",options.outputFileName);
-            };
-
-            const onProgress = function (percent) {
-                console.log("##LESS##Progress:", percent);
-            };
-
-            const onDownloaded = function (list) {
-                console.log("##LESS##Download finished: ",list);
-            };
-
-            const onComplete = function (outFile) {
-                console.log("Done:", outFile);
-                filename = outFile;
-                listener.off('start', onStart);
-                listener.off('progress', onProgress);
-                listener.off('downloaded', onDownloaded);
-                listener.off('complete', onComplete);
-                listener.off('error', onError);
-                resolve(); // Move to the next download
-            };
-
-            const onError = function (error) {
-                console.error("Error:", error);
-                /* listener.off('start', onStart);
-                listener.off('progress', onProgress);
-                listener.off('downloaded', onDownloaded);
-                listener.off('complete', onComplete);
-                listener.off('error', onError);
-                reject(error); // Stop the loop on error */
-            };
-
-            listener.on('start', onStart);
-            listener.on('progress', onProgress);
-            listener.on('downloaded', onDownloaded);
-            listener.on('complete', onComplete);
-            listener.on('error', onError);
-
-        });
-        convert && await convertVideo(filename,filename.replace(".ts",".mp4"));
+function getProgress(folderPath) {
+    if (fs.existsSync(path.join(folderPath, PROGRESSFILE))) {
+        try {
+            const progress = fs.readFileSync(path.join(folderPath, PROGRESSFILE), 'utf8');
+            return progress.split(':').map(p => parseInt(p, 10) || 0);
+        } catch (error) {
+            fs.unlinkSync(path.join(folderPath, PROGRESSFILE));
+            return [0,0];
+        }
     }
+    return [0,0];
+}
 
+function saveProgress(folderPath, segmentIndex, episodeString) {
+    try {
+        let episodeIndex = getEpisodeNumber(episodeString) ?? 0;
+        fs.writeFileSync(path.join(folderPath, PROGRESSFILE), `${episodeIndex.toString()}:${segmentIndex.toString()}`, { encoding: 'utf8', flag: 'w' });
+    } catch (error) {
+        console.error('##LESS##Error saving progress: ', error);
+    }
+}
+
+function getEpisodeNumber(fileName) {
+    const match = fileName.match(/S\d+E(\d+)\.ts/);
+    if (match && match[1]) {
+        return parseInt(match[1], 10);
+    }
+    return undefined;
 }
 
 async function getIndexUrls(videoURLS) {
@@ -127,14 +100,17 @@ const feature_flags = {
 
 const LOCKFILE = path.join(__dirname, ".running");
 const QUEUEFILE = path.join(__dirname, ".queue");
+const PROGRESSFILE = ".progress";
 
 // Export all utility functions
 module.exports = {
     convertVideo,
-    downloadFiles,
+    saveProgress,
+    getProgress,
     getIndexUrls,
     sleep,
     feature_flags,
     LOCKFILE,
-    QUEUEFILE
+    QUEUEFILE,
+    PROGRESSFILE
 };

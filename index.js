@@ -1,7 +1,9 @@
 
 (async () => {
   var { JSDOM } = require('jsdom');
-  const utils = require('./utils');
+  const utils = require("./own_modules/utils");
+  const fs = require("fs");
+  const download_helper = require("./own_modules/download_helper");
 
   // Base URL of the site
   var originUrl = "https://s.to/";
@@ -54,7 +56,7 @@
         var matchURL = body.match(rURL);
         var matchS = body.match(rMetaS);
         var matchE = body.match(rMetaE);
-  
+
         if (matchURL && matchS && matchE) {
           return [matchS[1], matchE[1], originUrl + matchURL[1]];
         }
@@ -67,7 +69,7 @@
 
   videoURLS.push(...results.filter(e => e));
 
-  if(videoURLS.length <= 0){
+  if (videoURLS.length <= 0) {
     console.error("Could not retrieve video url!");
     return;
   }
@@ -76,12 +78,12 @@
 
   const result = await utils.getIndexUrls(videoURLS);
 
-  if(result.length <= 0){
+  if (result.length <= 0) {
     console.error("no episode index.m3u8 not found!")
     return;
   }
-  
-  await utils.downloadFiles(result, title)
+
+  await download_helper.downloadFiles(result, title)
     .then(() => console.log("All downloads complete"))
     .catch(err => console.error("An error occurred:", err));
 

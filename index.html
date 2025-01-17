@@ -38,6 +38,12 @@
             /* Ensure the button text stays in one line */
         }
 
+        button.labelButton{
+            font-size: small;
+            padding: 2px;
+            margin: 2px;
+        }
+
         #title {
             width: 150px;
             /* Shrink the title input */
@@ -46,6 +52,15 @@
         .checkbox-container{
             display: flex;
             flex-direction: column;
+        }
+
+        input.labelCheckbox{
+            margin: 5px;
+        }
+
+        .chk{
+            height: 15px;
+            margin-left: 10px;
         }
 
         #console {
@@ -70,9 +85,9 @@
     </div>
 
     <div class="checkbox-container">
-        <label><input type="checkbox" id="lessOutput" /> Less Output</label>
-        <label><input type="checkbox" id="queueDownload" checked /> Queue Download [WIP | MISSING]</label>
-        <label><input type="checkbox" id="tryResume" /> Try Resume Download [WIP | MISSING]</label>
+        <label class="labelCheckbox" ><input type="checkbox" class="chk"  id="lessOutput" /> Less Output</label> 
+        <label class="labelCheckbox" ><input type="checkbox" class="chk" id="queueDownload" checked /> Queue Download [WIP | MISSING] <button class="labelButton" onclick="clearQueue()">Clear Queue</button></label>
+        <label class="labelCheckbox" ><input type="checkbox" class="chk" id="tryResume" checked/> Try Resume Download [WIP | MISSING] <button class="labelButton" onclick="clearProgress()">Clear Progress</button></label>
     </div>
 
     <h2>Console</h2>
@@ -96,6 +111,29 @@
             div.textContent = msg;
             consoleDiv.appendChild(div);
             consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
+        }
+        
+        function clearProgress(){
+
+            fetch(`/clearProgress`)
+                .then((response) => response.json())
+                .then((data) => {
+                    addMessage(data.message, "white");
+                })
+                .catch((err) => {
+                    addMessage('Error clearing progress: ' + err.message, "red");
+                });
+        }
+
+        function clearQueue(){
+            fetch(`/clearQueue`)
+                .then((response) => response.json())
+                .then((data) => {
+                    addMessage(data.message, "white");
+                })
+                .catch((err) => {
+                    addMessage('Error clearing queue: ' + err.message, "red");
+                });
         }
 
         function startDownload() {

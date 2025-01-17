@@ -1,18 +1,19 @@
 var { JSDOM } = require('jsdom');
 const utils = require("./utils");
 const fs = require("fs");
+const download_helper = require("./download_helper");
 
 process.stdin.on('data', async (data) => {
 
   console.log("##LESS##" + JSON.parse(data.toString()));
-  const { seasonURL, title, resume, queue, Resume_QUEUE } = JSON.parse(data.toString());
+  const { seasonURL, title, resume, queue, resume_queue } = JSON.parse(data.toString());
 
-  if (seasonURL === null && !Resume_QUEUE) {
+  if ((seasonURL === null || seasonURL === undefined) && !resume_queue) {
     console.error("No URL provided!");
     return;
   }
 
-  if (title === null && !Resume_QUEUE) {
+  if ((title === null ||title === undefined) && !resume_queue) {
     console.error("No title provided (used for naming output directory)");
     return;
   }
@@ -23,14 +24,14 @@ process.stdin.on('data', async (data) => {
   //check lockfile and add task into queue if present
   if (!fs.existsSync(utils.LOCKFILE)) {
     fs.writeFileSync(utils.LOCKFILE, "", { encoding: "utf-8" });
-    if (!Resume_QUEUE)
+    if (!resume_queue)
       fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
   }
   else if (!utils.feature_flags.DOWNLOAD_QUEUE) {
     console.error("Download already running AND Queue Download turned OFF!");
     return;
   }
-  else if (fs.existsSync(utils.LOCKFILE) && utils.feature_flags.DOWNLOAD_QUEUE && !Resume_QUEUE) {
+  else if (fs.existsSync(utils.LOCKFILE) && utils.feature_flags.DOWNLOAD_QUEUE && !resume_queue) {
     fs.appendFileSync(utils.QUEUEFILE, `${seasonURL}#${title};`);
     return;
   }
@@ -99,6 +100,9 @@ async function doTasks(queueItems) {
         var matchURL = body.match(rURL);
         var matchS = body.match(rMetaS);
         var matchE = body.match(rMetaE);
+        if(matchE[1] == "1"){
+          fs.writeFileSync("body.html", body);
+        }
 
         if (matchURL && matchS && matchE) {
           return [matchS[1], matchE[1], originUrl + matchURL[1]];
@@ -126,7 +130,7 @@ async function doTasks(queueItems) {
     return;
   }
 
-  await utils.downloadFiles(result, title);
+  await download_helper.downloadFiles(result, title);
 
   console.log("Season downloads complete");
   console.log("Checking for more in QUEUE...");

@@ -4,7 +4,7 @@ const http = require('http');
 const path = require("path");
 const fs = require("fs");
 const WebSocket = require('ws');
-const { LOCKFILE, QUEUEFILE } = require("./utils")
+const { LOCKFILE, QUEUEFILE } = require("./own_modules/utils");
 
 const app = express();
 const port = 3000;
@@ -27,12 +27,12 @@ app.get('/', (req, res) => {
 
     if (fs.existsSync(QUEUEFILE)) {
 
-        const child = spawn('node', ['downloadAsProcess.js'], {
+        const child = spawn('node', ['./own_modules/downloadAsProcess.js'], {
             detached: true,
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
-        child.stdin.write(JSON.stringify({ seasonURL:undefined, title:undefined, resume:false, queue:true, resume_queue:true }));
+        child.stdin.write(JSON.stringify({ seasonURL: undefined, title: undefined, resume: false, queue: true, resume_queue: true }));
         child.stdin.end();
 
         // Redirect child process logs to WebSocket
@@ -66,13 +66,13 @@ function setupWebSocketLoggers() {
 
     console.log = (...args) => {
         const message = args.join(' ');
-        originalLog(message);
+        originalLog(message.replace("##LESS##", ""));
         sendToClients('log', message);
     };
 
     console.error = (...args) => {
         const message = args.join(' ');
-        originalError(message);
+        originalError(message.replace("##LESS##", ""));
         sendToClients('error', message);
     };
 }
@@ -93,7 +93,7 @@ app.get('/downloadSeason', (req, res) => {
     var seasonURL = req.query["url"].trim();
     var title = req.query["title"].trim();
 
-    const child = spawn('node', ['downloadAsProcess.js'], {
+    const child = spawn('node', ['./own_modules/downloadAsProcess.js'], {
         detached: true,
         stdio: ['pipe', 'pipe', 'pipe']
     });
@@ -115,6 +115,17 @@ app.get('/downloadSeason', (req, res) => {
     res.status(200).json({ message: `Download started for title: ${title}` });
 
 });
+
+
+app.get('/clearQueue', (req, res) => {
+    if (fs.existsSync(QUEUEFILE)) {
+        fs.unlinkSync(QUEUEFILE);
+        res.status(200).json({ message: "Queue cleared!" });
+    }
+});
+
+//clear progress
+
 
 
 // Start the server
