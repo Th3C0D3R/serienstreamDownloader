@@ -38,7 +38,7 @@
             /* Ensure the button text stays in one line */
         }
 
-        button.labelButton{
+        button.labelButton {
             font-size: small;
             padding: 2px;
             margin: 2px;
@@ -49,16 +49,16 @@
             /* Shrink the title input */
         }
 
-        .checkbox-container{
+        .checkbox-container {
             display: flex;
             flex-direction: column;
         }
 
-        input.labelCheckbox{
+        input.labelCheckbox {
             margin: 5px;
         }
 
-        .chk{
+        .chk {
             height: 15px;
             margin-left: 10px;
         }
@@ -85,9 +85,11 @@
     </div>
 
     <div class="checkbox-container">
-        <label class="labelCheckbox" ><input type="checkbox" class="chk"  id="lessOutput" /> Less Output</label> 
-        <label class="labelCheckbox" ><input type="checkbox" class="chk" id="queueDownload" checked /> Queue Download [WIP | MISSING] <button class="labelButton" onclick="clearQueue()">Clear Queue</button></label>
-        <label class="labelCheckbox" ><input type="checkbox" class="chk" id="tryResume" checked/> Try Resume Download [WIP | MISSING] <button class="labelButton" onclick="clearProgress()">Clear Progress</button></label>
+        <label class="labelCheckbox"><input type="checkbox" class="chk" id="lessOutput" /> Less Output</label>
+        <label class="labelCheckbox"><input type="checkbox" class="chk" id="queueDownload" checked /> Queue Download
+            [WIP | MISSING] <button class="labelButton" onclick="clearQueue()">Clear Queue</button></label>
+        <label class="labelCheckbox"><input type="checkbox" class="chk" id="tryResume" checked /> Try Resume Download
+            [WIP | MISSING] <button class="labelButton" onclick="clearProgress()">Clear Progress</button></label>
     </div>
 
     <h2>Console</h2>
@@ -96,24 +98,42 @@
     <script>
         const consoleDiv = document.getElementById('console');
         const ws = new WebSocket(`ws://${location.host}`);
+        let currentProgressMessage = null;
 
         ws.onmessage = (event) => {
             const { type, message } = JSON.parse(event.data);
-            const color = type === 'error' ? 'red' : 'white';
-            addMessage(message, color);
+
+
+            if (type === 'log') {
+                if (message.startsWith('[Downloader]: Progress:')) {
+                    // Handle progress updates
+                    if (!currentProgressMessage) {
+                        currentProgressMessage = document.createElement('div');
+                        consoleDiv.appendChild(currentProgressMessage);
+                    }
+                    currentProgressMessage.textContent = message;
+                    consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll after progress update
+                } else {
+                    // Handle other log messages
+                    addMessage(message, 'white'); // Use 'white' or appropriate color for logs
+                }
+            } else if (type === 'error') {
+                // Handle error messages
+                addMessage(message, 'red');
+            }
         };
 
         function addMessage(msg, col) {
-            if(msg.indexOf("##LESS##") >= 0 && document.getElementById('lessOutput').checked) return;
-            else msg = msg.replace("##LESS##","");
+            if (msg.indexOf("##LESS##") >= 0 && document.getElementById('lessOutput').checked) return;
+            else msg = msg.replace("##LESS##", "");
             const div = document.createElement('div');
             div.style.color = col;
             div.textContent = msg;
             consoleDiv.appendChild(div);
             consoleDiv.scrollTop = consoleDiv.scrollHeight; // Auto-scroll
         }
-        
-        function clearProgress(){
+
+        function clearProgress() {
 
             fetch(`/clearProgress`)
                 .then((response) => response.json())
@@ -125,7 +145,7 @@
                 });
         }
 
-        function clearQueue(){
+        function clearQueue() {
             fetch(`/clearQueue`)
                 .then((response) => response.json())
                 .then((data) => {

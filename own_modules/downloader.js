@@ -8,7 +8,7 @@ let eventEmitter = new EventEmitter();
 let downloadOptions = {
     url: '',
     outputDir: '',
-    outputFileName: new Date().getTime() + '.ts',
+    outputFileName: new Date().getTime() + '.mp4',
     threadCount: 3,
     videoSuffix: '',
     videoUrlDirPath: '',

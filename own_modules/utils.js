@@ -43,7 +43,7 @@ function saveProgress(folderPath, segmentIndex, episodeString) {
 }
 
 function getEpisodeNumber(fileName) {
-    const match = fileName.match(/S\d+E(\d+)\.ts/);
+    const match = fileName.match(/S\d+E(\d+)\.mp4/);
     if (match && match[1]) {
         return parseInt(match[1], 10);
     }
@@ -77,7 +77,8 @@ async function getIndexUrls(videoURLS) {
 
             const baseMasterUrl = masterURL.split("master")[0];
             const indexUrlComplete = baseMasterUrl + indexPath;
-            console.log(`pulling episode ${u[1]}`);
+            const Update = { type: 'pull', message: u[1] };
+            process.stdout.write(JSON.stringify(Update) + '\n' );
             indexUrls.push([u[0], u[1], indexUrlComplete]);
         } catch (error) {
             console.error("Error processing URL: ", u, error.message);
