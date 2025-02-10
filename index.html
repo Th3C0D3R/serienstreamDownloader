@@ -116,6 +116,7 @@
                 } else {
                     // Handle other log messages
                     addMessage(message, 'white'); // Use 'white' or appropriate color for logs
+                    currentProgressMessage = null; // Clear the reference
                 }
             } else if (type === 'error') {
                 // Handle error messages

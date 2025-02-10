@@ -182,12 +182,11 @@ function download(options) {
             }
 
             eventEmitter.emit('progress', 0);
-            // mergeFiles(list)
 
             startTasks(list, downloadVideoFile, lastDownloadedInfo, downloadOptions.threadCount).then(() => {
-                eventEmitter.emit('downloaded', list);
-
                 mergeFiles(list);
+                eventEmitter.emit('downloaded', list);
+                
             })
 
         })

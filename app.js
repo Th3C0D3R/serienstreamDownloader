@@ -71,9 +71,6 @@ app.get('/', (req, res) => {
                             case "pull":
                                 logger('log',`[Downloader]: Pulling: ${parsedData.message}\n`);
                                 break;
-                            case "downloaded":
-                                logger('log',`[Downloader]: Done: ${parsedData.message}\n`);
-                                break;
                             case "done":
                                 logger('log',`[Downloader]: Done: ${parsedData.message}\n`);
                                 break;
@@ -111,13 +108,13 @@ function setupWebSocketLoggers() {
     console.log = (...args) => {
         const message = args.join(' ');
         originalLog(message.replace("##LESS##", ""));
-        sendToClients('log', message);
+        sendToClients('log', "non migrated" + message);
     };
 
     console.error = (...args) => {
         const message = args.join(' ');
         originalError(message.replace("##LESS##", ""));
-        sendToClients('error', message);
+        sendToClients('error',"non migrated" + message);
     };
 }
 

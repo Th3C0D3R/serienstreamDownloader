@@ -40,17 +40,13 @@ async function downloadFiles(videoURLS, title) {
             }
 
             const onDownloaded = function (list) {
-                const Update = { type: 'downloaded', message: list };
+                const Update = { type: 'done', message: "complete" };
                 process.stdout.write(JSON.stringify(Update) + '\n' );
             };
 
             const onComplete = function (outFile) {
-                //filename = outFile.replace(".ts", ".mp4");
-                fs.rename(outFile, filename,
-                () => {
-                    const Update = { type: 'done', message: filename };
-                    process.stdout.write(JSON.stringify(Update) + '\n' );
-                });
+                const Update = { type: 'done', message: outFile };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
 
                 if (fs.existsSync(path.join(doptions.outputDir, PROGRESSFILE))) {
                     fs.unlinkSync(path.join(doptions.outputDir, PROGRESSFILE));
