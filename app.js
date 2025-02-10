@@ -71,6 +71,7 @@ app.get('/', (req, res) => {
                             case "pull":
                                 logger('log',`[Downloader]: Pulling: ${parsedData.message}\n`);
                                 break;
+
                             case "done":
                                 logger('log',`[Downloader]: Done: ${parsedData.message}\n`);
                                 break;
@@ -98,28 +99,6 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Redirect console logs/errors to WebSocket clients
-function setupWebSocketLoggers() {
-   
-    // Override console.log and console.error
-    const originalLog = console.log;
-    const originalError = console.error;
-
-    console.log = (...args) => {
-        const message = args.join(' ');
-        originalLog(message.replace("##LESS##", ""));
-        sendToClients('log', "non migrated" + message);
-    };
-
-    console.error = (...args) => {
-        const message = args.join(' ');
-        originalError(message.replace("##LESS##", ""));
-        sendToClients('error',"non migrated" + message);
-    };
-}
-
-// Setup WebSocket loggers
-setupWebSocketLoggers();
 
 app.get('/downloadSeason', (req, res) => {
     if (req.query["url"] === undefined) {
@@ -144,7 +123,43 @@ app.get('/downloadSeason', (req, res) => {
 
     // Redirect child process logs to WebSocket
     child.stdout.on('data', (data) => {
-        console.log(`[Downloader1]: ${data.toString()}`);
+        const messages = data.toString().split('\n'); // Split by newline to handle multiple messages
+        messages.forEach(message => {
+            if(message){ //prevent empty messages
+                try {
+                    const parsedData = JSON.parse(message);
+                    switch(parsedData.type){
+                        case "progress":
+                            readline.clearLine(process.stdout, 0);
+                            readline.cursorTo(process.stdout, 0);
+                             logger('log',`[Downloader]: Progress: ${parsedData.percentage}%\r`)
+                            break;
+                        case "start":
+                            logger('log',`[Downloader]: Started: ${parsedData.message.outputFileName}\n`);
+                            break;
+                        case "skip":
+                            logger('log',`[Downloader]: Skipped: ${parsedData.message.outputFileName}\n`);
+                            break;
+                        case "pull":
+                            logger('log',`[Downloader]: Pulling: ${parsedData.message}\n`);
+                            break;
+
+                        case "done":
+                            logger('log',`[Downloader]: Done: ${parsedData.message}\n`);
+                            break;
+                        case "msg":
+                                logger('log',`[Downloader]: ${parsedData.message}\n`);
+                                break;
+                        default:
+                            console.log(`[Downloader]: ${JSON.stringify(message)}`); 
+                    }
+                        
+                } catch (error) {
+                    console.error("Error parsing JSON:", error);
+                    console.log(`[Downloader]: ${JSON.stringify(message)}`); // If JSON parsing fails, log as regular message
+                }
+            }
+        })
     });
 
     child.stderr.on('data', (data) => {
