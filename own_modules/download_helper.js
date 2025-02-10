@@ -2,11 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 const { download } = require('./downloader');
-const { convertVideo } = require('./utils');
 const { getProgress, PROGRESSFILE } = require('./utils');
 
 
-async function downloadFiles(videoURLS, title, convert = false) {
+async function downloadFiles(videoURLS, title) {
     for (var u of videoURLS) {
         var filename = ""
         var doptions = {

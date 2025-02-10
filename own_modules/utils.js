@@ -1,24 +1,8 @@
 // Import required modules
-const hbjs = require('handbrake-js');
+
 const path = require("path");
 const fs = require("fs");
 
-// Convert a video using HandBrake
-async function convertVideo(input, output) {
-    return new Promise((resolve, reject) => {
-        hbjs
-            .spawn({ input, output })
-            .on('error', (err) => reject(err))
-            .on('progress', (progress) => {
-                console.log(
-                    'Percent complete: %s, ETA: %s',
-                    progress.percentComplete,
-                    progress.eta
-                );
-            })
-            .on('end', () => resolve());
-    });
-}
 
 function getProgress(folderPath) {
     if (fs.existsSync(path.join(folderPath, PROGRESSFILE))) {
@@ -105,7 +89,6 @@ const PROGRESSFILE = ".progress";
 
 // Export all utility functions
 module.exports = {
-    convertVideo,
     saveProgress,
     getProgress,
     getIndexUrls,

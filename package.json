@@ -12,7 +12,6 @@
   "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "handbrake-js": "^7.1.0",
     "jsdom": "^26.0.0",
     "node-fetch": "^3.3.2",
     "node-windows": "^1.0.0-beta.8",
