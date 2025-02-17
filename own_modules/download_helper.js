@@ -2,11 +2,10 @@
 const fs = require('fs');
 const path = require('path');
 const { download } = require('./downloader');
-const { convertVideo } = require('./utils');
 const { getProgress, PROGRESSFILE } = require('./utils');
 
 
-async function downloadFiles(videoURLS, title, convert = false) {
+async function downloadFiles(videoURLS, title) {
     for (var u of videoURLS) {
         var filename = ""
         var doptions = {
@@ -14,7 +13,7 @@ async function downloadFiles(videoURLS, title, convert = false) {
             threadCount: 5,
             outputDir: `downloaded/${title}/Season 0${u[0]}`,
             videoUrlDirPath: u[2].split("index")[0],
-            outputFileName: `S0${u[0]}E${u[1]}.ts`,
+            outputFileName: `S0${u[0]}E${u[1]}.mp4`,
             useResumeDEBUG: true
         };
         var progress = getProgress(doptions.outputDir);
@@ -26,35 +25,39 @@ async function downloadFiles(videoURLS, title, convert = false) {
             let listener = download(doptions);
 
             const onStart = function (options) {
-                console.log("Download started: ", options.outputFileName);
+                const Update = { type: 'start', message: options };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
             };
 
             const onSkip = function (options) {
-                console.log("Download skipped: ", options.outputFileName);
+                const Update = { type: 'skip', message: options };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
             };
 
-            const onProgress = function (percent) {
-                console.log("##LESS##Progress:", percent);
-            };
+            const onProgress = function  (percentage) {
+                const progressUpdate = { type: 'progress', percentage };
+                process.stdout.write(JSON.stringify(progressUpdate) + '\n' );
+            }
 
             const onDownloaded = function (list) {
-                console.log("##LESS##Download finished: ", list);
+                const Update = { type: 'done', message: "complete" };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
             };
 
             const onComplete = function (outFile) {
-                console.log("Done:", outFile);
-                filename = outFile;
+                const Update = { type: 'done', message: outFile };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
 
                 if (fs.existsSync(path.join(doptions.outputDir, PROGRESSFILE))) {
                     fs.unlinkSync(path.join(doptions.outputDir, PROGRESSFILE));
                 }
-
                 listener.off('start', onStart);
                 listener.off('skipped', onSkip);
                 listener.off('progress', onProgress);
                 listener.off('downloaded', onDownloaded);
                 listener.off('complete', onComplete);
                 listener.off('error', onError);
+                
                 resolve(); // Move to the next download
             };
 
@@ -70,7 +73,7 @@ async function downloadFiles(videoURLS, title, convert = false) {
             listener.on('error', onError);
 
         });
-        convert && await convertVideo(filename, filename.replace(".ts", ".mp4"));
+        
     }
 
 }

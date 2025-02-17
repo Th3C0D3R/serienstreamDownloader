@@ -5,7 +5,9 @@ const download_helper = require("./download_helper");
 
 process.stdin.on('data', async (data) => {
 
-  console.log("##LESS##" + JSON.parse(data.toString()));
+  const Update = { type: 'msg', message: JSON.parse(data.toString()) };
+  process.stdout.write(JSON.stringify(Update) + '\n' );
+
   const { seasonURL, title, resume, queue, resume_queue } = JSON.parse(data.toString());
 
   if ((seasonURL === null || seasonURL === undefined) && !resume_queue) {
@@ -47,7 +49,8 @@ process.stdin.on('data', async (data) => {
 });
 
 process.stdin.on('end', () => {
-  console.log('##LESS##Child process received all input data.');
+  const Update = { type: 'msg', message: '##LESS##Child process received all input data.'};
+                process.stdout.write(JSON.stringify(Update) + '\n' );
 });
 
 
@@ -60,7 +63,8 @@ async function doTasks(queueItems) {
   let seasonURL = firstItem[0];
   let title = firstItem[1];
 
-  console.log(`Starting download for URL: ${seasonURL}, Title: ${title}`);
+  const Update = { type: 'msg', message: `Starting download for URL: ${seasonURL}, Title: ${title}` };
+                process.stdout.write(JSON.stringify(Update) + '\n' );
 
   // Base URL of the site
   var originUrl = "https://s.to/";

@@ -1,24 +1,8 @@
 // Import required modules
-const hbjs = require('handbrake-js');
+
 const path = require("path");
 const fs = require("fs");
 
-// Convert a video using HandBrake
-async function convertVideo(input, output) {
-    return new Promise((resolve, reject) => {
-        hbjs
-            .spawn({ input, output })
-            .on('error', (err) => reject(err))
-            .on('progress', (progress) => {
-                console.log(
-                    'Percent complete: %s, ETA: %s',
-                    progress.percentComplete,
-                    progress.eta
-                );
-            })
-            .on('end', () => resolve());
-    });
-}
 
 function getProgress(folderPath) {
     if (fs.existsSync(path.join(folderPath, PROGRESSFILE))) {
@@ -43,7 +27,7 @@ function saveProgress(folderPath, segmentIndex, episodeString) {
 }
 
 function getEpisodeNumber(fileName) {
-    const match = fileName.match(/S\d+E(\d+)\.ts/);
+    const match = fileName.match(/S\d+E(\d+)\.mp4/);
     if (match && match[1]) {
         return parseInt(match[1], 10);
     }
@@ -77,7 +61,8 @@ async function getIndexUrls(videoURLS) {
 
             const baseMasterUrl = masterURL.split("master")[0];
             const indexUrlComplete = baseMasterUrl + indexPath;
-            console.log(`pulling episode ${u[1]}`);
+            const Update = { type: 'pull', message: u[1] };
+            process.stdout.write(JSON.stringify(Update) + '\n' );
             indexUrls.push([u[0], u[1], indexUrlComplete]);
         } catch (error) {
             console.error("Error processing URL: ", u, error.message);
@@ -104,7 +89,6 @@ const PROGRESSFILE = ".progress";
 
 // Export all utility functions
 module.exports = {
-    convertVideo,
     saveProgress,
     getProgress,
     getIndexUrls,
