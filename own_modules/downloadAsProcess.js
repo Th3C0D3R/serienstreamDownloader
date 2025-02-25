@@ -104,9 +104,9 @@ async function doTasks(queueItems) {
         var matchURL = body.match(rURL);
         var matchS = body.match(rMetaS);
         var matchE = body.match(rMetaE);
-        if(matchE[1] == "1"){
-          fs.writeFileSync("body.html", body);
-        }
+        //if(matchE[1] == "1"){
+          //fs.writeFileSync("body.html", body);
+        //}
 
         if (matchURL && matchS && matchE) {
           return [matchS[1], matchE[1], originUrl + matchURL[1]];
