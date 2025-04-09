@@ -43,7 +43,7 @@ process.stdin.on('data', async (data) => {
   await doTasks(queueItems);
 
 
-  console.log(`Queue Download completed`);
+  console.log({type: 'msg', message: `Queue Download completed` });
   fs.unlinkSync(utils.LOCKFILE);
   fs.unlinkSync(utils.QUEUEFILE);
 });
@@ -136,8 +136,8 @@ async function doTasks(queueItems) {
 
   await download_helper.downloadFiles(result, title);
 
-  console.log("Season downloads complete");
-  console.log("Checking for more in QUEUE...");
+  console.log({type: 'msg', message: "Season downloads complete" });
+  console.log({type: 'msg', message: "Checking for more in QUEUE..." });
   var queueData = fs.readFileSync(utils.QUEUEFILE, { encoding: "utf-8" });
   var queueItems = queueData.split(";");
   queueItems.shift();
