@@ -5,7 +5,7 @@ const download_helper = require("./download_helper");
 
 process.stdin.on('data', async (data) => {
 
-  const Update = { type: 'msg', message: JSON.parse(data.toString()) };
+  const Update = { type: 'msg', message: data.toString() };
   process.stdout.write(JSON.stringify(Update) + '\n' );
 
   const { seasonURL, title, resume, queue, resume_queue } = JSON.parse(data.toString());

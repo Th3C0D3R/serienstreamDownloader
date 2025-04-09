@@ -11,10 +11,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsdom": "^26.0.0",
     "node-fetch": "^3.3.2",
     "node-windows": "^1.0.0-beta.8",
+    "puppeteer": "^24.6.0",
     "request": "^2.88.2",
     "ws": "^8.18.0"
   }

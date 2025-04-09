@@ -180,8 +180,32 @@ app.get('/clearQueue', (req, res) => {
     }
 });
 
-//clear progress
+app.get('/getTelegramLink', (req, res) => {
 
+    if (req.query["url"] === undefined) {
+        return res.status(400).json({ error: "SerienStream URL is missing!" });
+    }
+
+    var url = req.query["url"].trim();
+
+    const child = spawn('node', ['./own_modules/getTGLink.js'], {
+        detached: true,
+        stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    child.stdin.write(JSON.stringify({ url}));
+    child.stdin.end();
+
+    child.stdout.on('data', (data) => {
+
+    });
+
+    child.stderr.on('data', (data) => {
+        console.error(`[Downloader]: ${data.toString()}`);
+    });
+
+    res.status(200).json({ message: `Scrapper started for url: ${url}` });
+});
 
 
 // Start the server
