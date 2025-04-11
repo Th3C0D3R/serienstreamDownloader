@@ -182,8 +182,8 @@ app.get('/clearQueue', (req, res) => {
 
 app.get('/getTelegramLink', (req, res) => {
 
-    if (req.query["url"] === undefined) {
-        return res.status(400).json({ error: "SerienStream URL is missing!" });
+    if (req.query["url"] === undefined || req.query["url"].length <= 0) {
+        return res.status(400).json({ error: "url=[url] is missing!" });
     }
 
     var url = req.query["url"].trim();
@@ -197,7 +197,7 @@ app.get('/getTelegramLink', (req, res) => {
     child.stdin.end();
 
     child.stdout.on('data', (data) => {
-
+        console.log(data.toString());
     });
 
     child.stderr.on('data', (data) => {
