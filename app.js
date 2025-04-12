@@ -180,6 +180,10 @@ app.get('/clearQueue', (req, res) => {
     }
 });
 
+app.get('/tgLink',(req,res)=>{
+    res.sendFile(path.join(__dirname, 'tgLink.html'));
+})
+
 app.get('/getTelegramLink', (req, res) => {
 
     if (req.query["url"] === undefined || req.query["url"].length <= 0) {

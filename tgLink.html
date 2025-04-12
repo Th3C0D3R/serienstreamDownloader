@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moviemax Link Grapper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .form-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input,
+        button {
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        input.inputtext {
+            flex-grow: 1;
+            /* Make input take up remaining space */
+            min-width: 100px;
+            /* Set a minimum width */
+        }
+
+        button {
+            min-width: 100px;
+            /* Minimum width to display text */
+            cursor: pointer;
+            white-space: nowrap;
+            /* Ensure the button text stays in one line */
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Moviemax Link Grapper</h1>
+    <div class="form-container">
+        <input type="text" id="url" class="inputtext" placeholder="Enter URL" />
+        <button onclick="startGrapper()">Start Grapper</button>
+    </div>
+
+
+    <script>
+
+        function startGrapper() {
+            const url = document.getElementById('url').value;
+
+            if (!url) {
+                alert('Please enter both URL and Title.');
+                return;
+            }
+
+            fetch(`/getTelegramLink?url=${encodeURIComponent(url)}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    alert(data.message);
+                })
+                .catch((err) => {
+                    alert('Error starting grapper: ' + err.message);
+                });
+        }
+    </script>
+</body>
+
+</html>
