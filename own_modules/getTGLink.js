@@ -74,12 +74,20 @@ process.stdin.on('data', async (data) => {
 
     console.log(`Get Groupe Name`);
     var name = await page.evaluate(() => {
-        const element = document.querySelector(".tgme_page_title");
+        let element = document.querySelector(".tgme_page_title");
         if (element && element.innerText) {
             return element.innerText;
         }
         return "none";
     });
+
+    var image = await page.evaluate(()=>{
+        let element = document.querySelector(".tgme_page_photo_image");
+        if(element && element.src){
+            return element.src;
+        }
+        return "none";
+    })
 
     console.log(`Close Browser`);
     await browser.close();
@@ -91,8 +99,9 @@ process.stdin.on('data', async (data) => {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
+            parse_mode: 'markdown',
             chat_id: process.env.TG_CHAT_ID,
-            text: `Channel: ${name}\nLink: ${href}`
+            text: `${(image != "none" ? "[‏](${image})\n" : "")}Channel: ${name}\nLink: ${href}`
         })
     });
 
