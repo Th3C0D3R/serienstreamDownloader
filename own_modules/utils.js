@@ -37,7 +37,7 @@ function getEpisodeNumber(fileName) {
 
 async function getIndexUrls(videoURLS) {
     const indexUrls = [];
-    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     for (const u of videoURLS) {
         try {
             // Redirect URL
