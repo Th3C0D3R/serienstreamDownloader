@@ -2,6 +2,7 @@
 
 const path = require("path");
 const fs = require("fs");
+const puppeteer = require("puppeteer");
 
 
 function getProgress(folderPath) {
@@ -11,10 +12,10 @@ function getProgress(folderPath) {
             return progress.split(':').map(p => parseInt(p, 10) || 0);
         } catch (error) {
             fs.unlinkSync(path.join(folderPath, PROGRESSFILE));
-            return [0,0];
+            return [0, 0];
         }
     }
-    return [0,0];
+    return [0, 0];
 }
 
 function saveProgress(folderPath, segmentIndex, episodeString) {
@@ -36,7 +37,7 @@ function getEpisodeNumber(fileName) {
 
 async function getIndexUrls(videoURLS) {
     const indexUrls = [];
-
+    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     for (const u of videoURLS) {
         try {
             // Redirect URL
@@ -50,7 +51,25 @@ async function getIndexUrls(videoURLS) {
             const hlsRegex = /'hls':\s*'([^']+)'/;
             const hlsResponse = await fetch(redUrl);
             const hlsBody = await hlsResponse.text();
-            const masterURL = atob(hlsBody.match(hlsRegex)?.[1]);
+            var masterURL = "";
+            try {
+                masterURL = atob(hlsBody.match(hlsRegex)?.[1]);
+            } catch (error) {
+                
+                const page = await browser.newPage();
+                var promRes;
+                var promWait = new Promise((res, _) => promRes = res);
+                page.on('response', response => {
+                    var url = response.url();
+                    if (url.indexOf("master.m3u8") >= 0) {
+                        masterURL = url;
+                        promRes();
+                    }
+                });
+                await page.goto(redUrl);
+                await promWait;
+                page.close();
+            }
             if (!masterURL) throw new Error("HLS URL not found");
 
             // Fetch index.m3u8 URL
@@ -62,13 +81,13 @@ async function getIndexUrls(videoURLS) {
             const baseMasterUrl = masterURL.split("master")[0];
             const indexUrlComplete = baseMasterUrl + indexPath;
             const Update = { type: 'pull', message: u[1] };
-            process.stdout.write(JSON.stringify(Update) + '\n' );
+            process.stdout.write(JSON.stringify(Update) + '\n');
             indexUrls.push([u[0], u[1], indexUrlComplete]);
         } catch (error) {
             console.error("Error processing URL: ", u, error.message);
         }
     }
-
+    browser.close();
     return indexUrls;
 }
 
