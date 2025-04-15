@@ -99,9 +99,9 @@ process.stdin.on('data', async (data) => {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            parse_mode: 'markdown',
+            parse_mode: 'HTML',
             chat_id: process.env.TG_CHAT_ID,
-            text: `${(image != "none" ? "[‏](${image})\n" : "")}Channel: ${name}\nLink: ${href}`
+            text: `${(image != "none" ? `<a href="${image}"> ‏ </a>\n` : "")}Channel: ${name}\nLink: ${href}`
         })
     });
 
