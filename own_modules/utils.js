@@ -37,7 +37,7 @@ function getEpisodeNumber(fileName) {
 
 async function getIndexUrls(videoURLS) {
     const indexUrls = [];
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout: 0 });
     for (const u of videoURLS) {
         try {
             // Redirect URL
@@ -55,20 +55,43 @@ async function getIndexUrls(videoURLS) {
             try {
                 masterURL = atob(hlsBody.match(hlsRegex)?.[1]);
             } catch (error) {
-                
+
                 const page = await browser.newPage();
                 var promRes;
                 var promWait = new Promise((res, _) => promRes = res);
-                page.on('response', response => {
+                page.on('response', async response => {
                     var url = response.url();
                     if (url.indexOf("master.m3u8") >= 0) {
-                        masterURL = url;
-                        promRes();
+                        if (url.indexOf("%2Fmaster.m3u8%3F")>=0)
+                            return;
+                        else {
+                            masterURL = url;
+                            promRes();
+                        }
                     }
                 });
                 await page.goto(redUrl);
+                await page.waitForSelector("div.spin");
+                var x = await page.evaluate(() => {
+                    return document.querySelector("div.spin.spin-hidden");
+                });
+                while (x == null) {
+                    await sleep(200);
+                    await page.click("div.spin");
+                    await sleep(200);
+                    var pages = await browser.pages();
+                    for (let i = 0; i < pages.length; i++) {
+                        const t = pages[i];
+                        if (t.url() != "about:blank" && t.url() != redUrl && t.url() != "") {
+                            await t.close();
+                        }
+                    }
+                    x = await page.evaluate(() => {
+                        return document.querySelector("div.spin.spin-hidden");
+                    });
+                }
                 await promWait;
-                page.close();
+                await page.close();
             }
             if (!masterURL) throw new Error("HLS URL not found");
 
