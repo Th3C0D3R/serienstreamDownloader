@@ -37,7 +37,7 @@ function getEpisodeNumber(fileName) {
 
 async function getIndexUrls(videoURLS) {
     const indexUrls = [];
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout:0 });
     for (const u of videoURLS) {
         try {
             // Redirect URL
@@ -67,6 +67,24 @@ async function getIndexUrls(videoURLS) {
                     }
                 });
                 await page.goto(redUrl);
+                await page.waitForSelector("div.spin");
+                var x = await page.evaluate(()=>{
+                    return document.querySelector("div.spin.spin-hidden");
+                });
+                while(x == null){
+                    await sleep(200);
+                    var targets = browser.targets();
+                    await page.click("div.spin");
+                    await sleep(200);
+                    var newTargets = browser.targets();
+                    if(newTargets.length > targets.length){
+                        var lastPage = await newTargets[newTargets.length - 1].asPage();
+                        await lastPage.close();
+                    }
+                    x = await page.evaluate(()=>{
+                        return document.querySelector("div.spin.spin-hidden");
+                    });
+                }
                 await promWait;
                 page.close();
             }
