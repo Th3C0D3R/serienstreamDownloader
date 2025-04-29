@@ -37,7 +37,7 @@ function getEpisodeNumber(fileName) {
 
 async function getIndexUrls(videoURLS) {
     const indexUrls = [];
-    const browser = await puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout: 0 });
+    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'], timeout: 0 });
     for (const u of videoURLS) {
         try {
             // Redirect URL
@@ -62,9 +62,7 @@ async function getIndexUrls(videoURLS) {
                 page.on('response', async response => {
                     var url = response.url();
                     if (url.indexOf("master.m3u8") >= 0) {
-                        const mres = await fetch(url);
-                        const mbody = await mres.text();
-                        if (mbody.length == "not found.".length || mbody.includes("found.") >= 0)
+                        if (url.indexOf("%2Fmaster.m3u8%3F")>=0)
                             return;
                         else {
                             masterURL = url;
